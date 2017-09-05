@@ -12,9 +12,13 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.CharsetEncoder;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,15 +41,10 @@ public class Main {
 		FileReader fileReader = new FileReader(new File(path));
 		BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(path), "UTF-8"));
 		String line = null;
-		int i = 0;
 		StringBuilder sb = new StringBuilder();
 		while ((line = bufferedReader.readLine()) != null) {
 			sb.append(line);
 			sb.append("\n");
-			if (i == 200) {
-				break;
-			}
-			i++;
 		}
 		bufferedReader.close();
 		fileReader.close();
@@ -54,6 +53,27 @@ public class Main {
 		Matcher matcher = pattern.matcher(text);
 		List<Conversation> conversations = new ArrayList<>();
 		Map<String, Integer> wordCount = new HashMap<>();
+		List<String> wordsToSkip = new ArrayList<>();
+		wordsToSkip.add("so");
+		wordsToSkip.add("to");
+		wordsToSkip.add("of");
+		wordsToSkip.add("a");
+		wordsToSkip.add("an");
+		wordsToSkip.add("in");
+		wordsToSkip.add("is");
+		wordsToSkip.add("for");
+		wordsToSkip.add("on");
+		wordsToSkip.add("be");
+		wordsToSkip.add("that");
+		wordsToSkip.add("it");
+		wordsToSkip.add("are");
+		wordsToSkip.add("and");
+		wordsToSkip.add("was");
+		wordsToSkip.add("can");
+		wordsToSkip.add("with");
+		wordsToSkip.add("the");
+		wordsToSkip.add("<Media");
+		wordsToSkip.add("omitted>");
 		while (matcher.find()) {
 			Conversation conversation = new Conversation();
 			String conversationText = matcher.group();
@@ -75,7 +95,8 @@ public class Main {
 			conversation.setMessage(message);
 			String[] words = message.split(" ");
 			for (String word : words) {
-				if(word.isEmpty())
+				word=word.trim();
+				if(word.isEmpty() || wordsToSkip.contains(word))
 					continue;
 				Integer count = wordCount.get(word);
 				if (count == null) {
@@ -87,8 +108,19 @@ public class Main {
 			}
 			conversations.add(conversation);
 		}
-		System.out.println(conversations);
 		System.out.println(wordCount);
+		Set<Entry<String,Integer>> set = wordCount.entrySet();
+		List<Entry<String, Integer>> entryList = new ArrayList<>(set);
+		Collections.sort(entryList, new Comparator<Entry<String,Integer>>() {
+			@Override
+			public int compare(Entry<String, Integer> o1, Entry<String, Integer> o2) {
+				return o2.getValue().compareTo(o1.getValue());
+			}
+		});
+		entryList = entryList.subList(0, 50);
+		for (Entry<String, Integer> entry : entryList) {
+			System.out.println(entry.getKey() + " : "+entry.getValue());
+		}
 	}
 
 }
